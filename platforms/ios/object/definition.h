@@ -7,23 +7,33 @@
 
 #import <Foundation/Foundation.h>
 
+{% for name, property in properties.iteritems() %}
+{% if property.type != "string" and property.type != "number" %}
+#import "{{ prefix }}{{ name|capitalize }}.h"
+{% endif %}
+{% endfor %}
+
 @interface {{ prefix }}{{ name|capitalize }} : NSObject
 
 {% for name, property in properties.iteritems() %}
 {% if property.type == "string" and property.enum %}
-typedef NS_ENUM(NSInteger, {{ propertyname|capitalize }}Type) {
+typedef NS_ENUM(NSInteger, {{ name|capitalize }}Type) {
 {% for enum_val in property.enum %}
   {{ enum_val }},
 {% endfor %}
 };
-@property {{ propertyname|capitalize }}Type {{ name }};
+@property {{ name|capitalize }}Type {{ name }};
 {% elif property.type == "string" %}
 @property NSString* {{ name }};
 {% elif property.type == "number" %}
 @property NSNumber* {{ name }};
+{% else %}
+@property {{ prefix }}{{ property.type|capitalize }}* {{ name }};
 {% endif %}
+
 {% endfor %}
 
+- (id)initWithDictionary:(NSDictionary*)dict;
 - (void)deserialize:(NSData*)data;
 - (NSData*)serialize;
 

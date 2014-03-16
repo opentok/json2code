@@ -7,10 +7,50 @@
 
 #import "{{ prefix }}{{ name|capitalize }}.h"
 
-NSDictionary *{{ name }}TypeDictionary = [NSDictionary dictionaryWithObjects:objectArray
-                                                  forKeys:keyArray];
+
+{% for name, property in properties.iteritems() %}
+{% if property.type == "string" and property.enum %}
+NSDictionary* {{ name }}TypeDictionary = nil;
+{% endif %}
+{% endfor %}
 
 @implementation {{ prefix }}{{ name|capitalize }}
+
++ (void)initialize {
+  {% for name, property in properties.iteritems() %}
+  {% if property.type == "string" and property.enum %}
+  NSArray* {{ name }}KeyArray = [NSArray arrayWithObjects:
+  {% for enum_val in property.enum %}
+    @"{{ enum_val }}",
+  {% endfor %}
+  nil];
+  NSArray* {{ name }}ObjectArray = [NSArray arrayWithObjects:
+  {% for enum_val in property.enum %}
+    [NSNumber numberWithInt:{{ enum_val }}],
+  {% endfor %}
+  nil];
+  {{ name }}TypeDictionary = [NSDictionary dictionaryWithObjects:{{ name }}ObjectArray
+                                                         forKeys:{{ name }}KeyArray];
+
+  {% endif %}
+  {% endfor %}
+}
+
+-(id)initWithDictionary:(NSDictionary *)dict {
+  self = [super init];
+  if (self != nil) {
+{% for name, property in properties.iteritems() %}
+{% if property.type == "string" and property.enum %}
+    self.{{ name }} = [[{{ name }}TypeDictionary objectForKey:[dict valueForKey:@"{{ name }}"]] intValue];
+{% elif property.type == "string" or property.type == "number" %}
+    self.{{ name }} = [dict valueForKey:@"{{ name }}"];
+{% else %}
+    self.{{ name }} = [dict valueForKey:@"{{ name }}"] ? [[{{ prefix }}{{ property.type|capitalize }} alloc] initWithDictionary:[dict valueForKey:@"{{ name }}"]] : nil;
+{% endif %}
+{% endfor %}
+  }
+  return self;
+}
 
 - (void)deserialize:(NSData*)data {
   NSError *error = nil;
@@ -23,14 +63,7 @@ NSDictionary *{{ name }}TypeDictionary = [NSDictionary dictionaryWithObjects:obj
   if([object isKindOfClass:[NSDictionary class]])
   {
     NSDictionary* results = object;
-
-{% for name, property in properties.iteritems() %}
-{% if property.type == "string" and property.enum %}
-    self.{{ name }} = [{{ name }}TypeDictionary objectForKey:[results valueForKey:@"{{ name }}"]]
-{% else %}
-    self.{{ name }} = [results valueForKey:@"{{ name }}"];
-{% endif %}
-{% endfor %}
+    [self initWithDictionary:results];
   }
 }
 
