@@ -18,7 +18,7 @@ package = sys.argv[3]
 
 schema = json.load(open(schema_path))
 
-def generate(platform, name, definition):
+def generate(platform, name, definition, schema):
 	name = name[:1].upper() + name[1:]
 	print "Generating %s %s ..." % (platform, name)
 
@@ -27,15 +27,23 @@ def generate(platform, name, definition):
 		template = JINJA_ENVIRONMENT.get_template(platform + '/object/' + template_file)
 
 		properties = definition.get('properties', {})
-		for _, property in properties.iteritems():
+		for property_name in properties.iterkeys():
+			property = properties[property_name]
+			# Dereference references to objects and enums
 			if property.get("$ref"):
 				type, = property.get("$ref").split('/')[-1:]
-				property['type'] = type
+				ref_property = schema.get('definitions', {}).get(type)
+				if ref_property['type'] == 'object':
+					property['type'] = type
+				elif ref_property['type'] == 'string' and ref_property.get('enum'):
+					property['type'] = 'string'
+					property['enum'] = ref_property.get('enum')
 
 		result = template.render({
 			'prefix': prefix,
 			'package': package,
 			'name': name,
+			'required': definition.get('required', []),
 			'properties': properties
 		})
 
@@ -53,9 +61,9 @@ def generate(platform, name, definition):
 
 for platform in ['ios', 'android']:
 	name = schema.get('title').split()[0]
-	generate(platform, name, schema)
+	generate(platform, name, schema, schema)
 	for name, definition in schema.get('definitions', {}).iteritems():
 		if definition['type'] == 'object':
-			generate(platform, name, definition)
+			generate(platform, name, definition, schema)
 
 

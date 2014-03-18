@@ -40,6 +40,9 @@ NSDictionary* {{ name }}TypeDictionary = nil;
   self = [super init];
   if (self != nil) {
 {% for name, property in properties.iteritems() %}
+{% if name in required %}
+    if ([dict valueForKey:@"{{ name }}"] == nil) { return nil; }
+{% endif %}
 {% if property.type == "string" and property.enum %}
     self.{{ name }} = [[{{ name }}TypeDictionary objectForKey:[dict valueForKey:@"{{ name }}"]] intValue];
 {% elif property.type == "string" or property.type == "number" %}
