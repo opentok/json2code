@@ -16,7 +16,7 @@
 @interface {{ prefix }}{{ name|capitalize }} : NSObject
 
 {% for name, property in properties.iteritems() %}
-{% if property.type == "string" and property.enum %}
+{% if property.enum %}
 typedef NS_ENUM(NSInteger, {{ name|capitalize }}Type) {
 {% for enum_val in property.enum %}
   {{ enum_val }},

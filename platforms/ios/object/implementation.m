@@ -9,7 +9,7 @@
 
 
 {% for name, property in properties.iteritems() %}
-{% if property.type == "string" and property.enum %}
+{% if property.enum %}
 NSDictionary* {{ name }}TypeDictionary = nil;
 {% endif %}
 {% endfor %}
@@ -18,7 +18,7 @@ NSDictionary* {{ name }}TypeDictionary = nil;
 
 + (void)initialize {
   {% for name, property in properties.iteritems() %}
-  {% if property.type == "string" and property.enum %}
+  {% if property.enum %}
   NSArray* {{ name }}KeyArray = [NSArray arrayWithObjects:
   {% for enum_val in property.enum %}
     @"{{ enum_val }}",
@@ -43,7 +43,7 @@ NSDictionary* {{ name }}TypeDictionary = nil;
 {% if name in required %}
     if ([dict valueForKey:@"{{ name }}"] == nil) { return nil; }
 {% endif %}
-{% if property.type == "string" and property.enum %}
+{% if property.enum %}
     self.{{ name }} = [[{{ name }}TypeDictionary objectForKey:[dict valueForKey:@"{{ name }}"]] intValue];
 {% elif property.type == "string" or property.type == "number" %}
     self.{{ name }} = [dict valueForKey:@"{{ name }}"];

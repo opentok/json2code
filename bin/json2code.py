@@ -27,6 +27,21 @@ def generate(platform, name, definition, schema):
 		template = JINJA_ENVIRONMENT.get_template(platform + '/object/' + template_file)
 
 		properties = definition.get('properties', {})
+		one_of = definition.get('oneOf', {})
+		if not properties and one_of:
+			for item in one_of:
+				if item.get('$ref'):
+					property = {}
+					type, = item.get("$ref").split('/')[-1:]
+					ref_property = schema.get('definitions', {}).get(type)
+					if not ref_property:
+						continue
+					if ref_property['type'] == 'object':
+						property['type'] = type
+					elif ref_property.get('enum'):
+						property['enum'] = ref_property.get('enum')
+					properties[type] = property
+
 		for property_name in properties.iterkeys():
 			property = properties[property_name]
 			# Dereference references to objects and enums
@@ -35,8 +50,7 @@ def generate(platform, name, definition, schema):
 				ref_property = schema.get('definitions', {}).get(type)
 				if ref_property['type'] == 'object':
 					property['type'] = type
-				elif ref_property['type'] == 'string' and ref_property.get('enum'):
-					property['type'] = 'string'
+				elif ref_property.get('enum'):
 					property['enum'] = ref_property.get('enum')
 
 		result = template.render({
