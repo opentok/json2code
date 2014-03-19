@@ -73,7 +73,8 @@ def generate(platform, name, definition, schema):
 			file.write(result)
 
 
-for platform in ['ios', 'android']:
+platforms = os.listdir('platforms')
+for platform in platforms:
 	name = schema.get('title').split()[0]
 	generate(platform, name, schema, schema)
 	for name, definition in schema.get('definitions', {}).iteritems():
