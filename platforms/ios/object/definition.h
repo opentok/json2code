@@ -6,35 +6,49 @@
 //
 
 #import <Foundation/Foundation.h>
-
-{% for name, property in properties.iteritems() %}
-{% if property.type != "string" and property.type != "number" %}
-#import "{{ prefix }}{{ name|capitalize }}.h"
+{% for property_name, property in properties.iteritems() %}
+{% if not(property.enum) and property.type != "string" and property.type != "number" %}
+#import "{{ prefix }}{{ property_name | classize }}.h"
 {% endif %}
 {% endfor %}
+{% for implementation_name in possibles %}
+#import "{{ prefix }}{{ implementation_name | classize }}.h"
+{% endfor %}
 
-@interface {{ prefix }}{{ name|capitalize }} : NSObject
+extern NSString *{{ prefix }}{{ name | classize }}ErrorDomain;
 
-{% for name, property in properties.iteritems() %}
+@interface {{ prefix }}{{ name | classize }} : NSObject
+
++ (id){{ name | instantize }}WithData:(NSData*)data error:(NSError**)err;
++ (id){{ name | instantize }}WithDictionary:(NSDictionary *)dict error:(NSError **)error;
++ (BOOL)validateDictionary:(NSDictionary*)dict error:(NSError **)err;
+
+{% if not(oneOf) %}
+- (NSDictionary*)dictionary;
+- (NSData*)dataWithJSONOptions:(NSJSONWritingOptions)opts error:(NSError**)error;
+{% endif %}
+
+{% if oneOf %}
+{% else %}
+{% for property_name, property in properties.iteritems() %}
 {% if property.enum %}
-typedef NS_ENUM(NSInteger, {{ name|capitalize }}Type) {
+typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | classize }}) {
 {% for enum_val in property.enum %}
-  {{ enum_val }},
+  {{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }},
 {% endfor %}
 };
-@property {{ name|capitalize }}Type {{ name }};
+@property {{ prefix }}{{ name }}{{ property_name|capitalize }} {{ property_name }};
 {% elif property.type == "string" %}
-@property NSString* {{ name }};
+@property NSString* {{ property_name }};
 {% elif property.type == "number" %}
-@property NSNumber* {{ name }};
+@property NSNumber* {{ property_name }};
+{% elif allClasses[property.type].oneOf %}
+@property id {{ property_name }};
 {% else %}
-@property {{ prefix }}{{ property.type|capitalize }}* {{ name }};
+@property {{ prefix }}{{ property.type|capitalize }}* {{ property_name }};
 {% endif %}
 
 {% endfor %}
-
-- (id)initWithDictionary:(NSDictionary*)dict;
-- (void)deserialize:(NSData*)data;
-- (NSData*)serialize;
+{% endif %}
 
 @end

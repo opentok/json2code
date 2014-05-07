@@ -5,6 +5,15 @@ import sys
 import json
 import jinja2
 
+def camelize(value):
+    return "".join(x.capitalize() if x else '_' for x in value.split("_"))
+
+def classize(value):
+	return value[:1].upper() + value[1:]
+
+def instantize(value):
+	return value[:1].lower() + value[1:]
+
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader("platforms"),
     extensions=['jinja2.ext.autoescape'],
@@ -12,53 +21,80 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     lstrip_blocks=True,
     autoescape=True)
 
+JINJA_ENVIRONMENT.filters['classize'] = classize
+JINJA_ENVIRONMENT.filters['instantize'] = instantize
+JINJA_ENVIRONMENT.filters['camelize'] = camelize
+
 schema_path = sys.argv[1]
 prefix = sys.argv[2]
 package = sys.argv[3]
 
 schema = json.load(open(schema_path))
 
-def generate(platform, name, definition, schema):
-	name = name[:1].upper() + name[1:]
-	print "Generating %s %s ..." % (platform, name)
+allClasses = {}
 
-	for template_file in os.listdir('platforms/' + platform + '/object'):
-		# ['object/definition.h', 'object/implementation.m']:
-		template = JINJA_ENVIRONMENT.get_template(platform + '/object/' + template_file)
-
-		properties = definition.get('properties', {})
-		one_of = definition.get('oneOf', {})
-		if not properties and one_of:
-			for item in one_of:
-				if item.get('$ref'):
-					property = {}
-					type, = item.get("$ref").split('/')[-1:]
-					ref_property = schema.get('definitions', {}).get(type)
-					if not ref_property:
-						continue
-					if ref_property['type'] == 'object':
-						property['type'] = type
-					elif ref_property.get('enum'):
-						property['enum'] = ref_property.get('enum')
-					properties[type] = property
-
+def parseClass(root, name):
+	one_of = root.get('oneOf', {})
+	if one_of:
+		parseOneOf(one_of, name)
+	else:
+		properties = root.get('properties', {})
 		for property_name in properties.iterkeys():
 			property = properties[property_name]
 			# Dereference references to objects and enums
 			if property.get("$ref"):
-				type, = property.get("$ref").split('/')[-1:]
-				ref_property = schema.get('definitions', {}).get(type)
-				if ref_property['type'] == 'object':
-					property['type'] = type
-				elif ref_property.get('enum'):
-					property['enum'] = ref_property.get('enum')
+				property['type'] = get_reference(property.get("$ref"))
+				del property['$ref']
+
+		allClasses[name] = {
+			'oneOf': False,
+			'properties': properties,
+			'required': root.get('required', [])
+		}
+
+def get_reference(reference):
+	if reference[:2] != "#/":
+		raise RuntimeError('Only internal absolute references are allowed at this time')
+	refComponents = reference[2:].split('/')
+	element = schema
+	while len(refComponents) > 0:
+		key = refComponents.pop(0)
+		element = element.get(key)
+
+	if not key in allClasses:
+		parseClass(element, key)
+
+	return key
+
+def parseOneOf(one_of, name):
+	possibles = []
+	for item in one_of:
+		if item.get('$ref'):
+			possibles.append(get_reference(item.get('$ref')))
+		else:
+			raise RuntimeError('oneOf only supports referenced definitions at this time')
+
+	allClasses[name] = {
+		'oneOf': True,
+		'possibles': possibles
+	}
+
+def generate(platform, name, definition):
+	name = classize(name)
+	print "Generating %s %s ..." % (platform, name)
+
+	for template_file in os.listdir('platforms/' + platform + '/object'):
+		template = JINJA_ENVIRONMENT.get_template(platform + '/object/' + template_file)
 
 		result = template.render({
 			'prefix': prefix,
 			'package': package,
 			'name': name,
 			'required': definition.get('required', []),
-			'properties': properties
+			'properties': definition.get('properties', {}),
+			'possibles': definition.get('possibles', []),
+			'oneOf': definition.get('oneOf', False),
+			'allClasses': allClasses
 		})
 
 		folder = 'output/' + platform
@@ -72,13 +108,11 @@ def generate(platform, name, definition, schema):
 		with open(folder + '/' + (prefix if platform == 'ios' else '') + name + ext, 'w') as file:
 			file.write(result)
 
+parseClass(schema, schema.get('title'))
 
 platforms = os.listdir('platforms')
 for platform in platforms:
-	name = schema.get('title').split()[0]
-	generate(platform, name, schema, schema)
-	for name, definition in schema.get('definitions', {}).iteritems():
-		if definition['type'] == 'object':
-			generate(platform, name, definition, schema)
+	for name, definition in allClasses.iteritems():
+		generate(platform, name, definition)
 
 
