@@ -6,7 +6,7 @@ import json
 import jinja2
 
 def camelize(value):
-    return "".join(x.capitalize() if x else '_' for x in value.split("_"))
+  return "".join(x.capitalize() if x else '_' for x in value.split("_"))
 
 def classize(value):
 	return value[:1].upper() + value[1:]
@@ -15,11 +15,11 @@ def instantize(value):
 	return value[:1].lower() + value[1:]
 
 JINJA_ENVIRONMENT = jinja2.Environment(
-    loader=jinja2.FileSystemLoader("platforms"),
-    extensions=['jinja2.ext.autoescape'],
-    trim_blocks=True,
-    lstrip_blocks=True,
-    autoescape=True)
+  loader=jinja2.FileSystemLoader("platforms"),
+  extensions=['jinja2.ext.autoescape'],
+  trim_blocks=True,
+  lstrip_blocks=True,
+  autoescape=True)
 
 JINJA_ENVIRONMENT.filters['classize'] = classize
 JINJA_ENVIRONMENT.filters['instantize'] = instantize
@@ -36,25 +36,40 @@ allClasses = {}
 def parseClass(root, name):
 	one_of = root.get('oneOf', {})
 	if one_of:
+		print 'wtf'
 		parseOneOf(one_of, name)
+		print 'wtf'
 	else:
 		properties = root.get('properties', {})
 		for property_name in properties.iterkeys():
+			print 'property_name = ' + property_name
 			property = properties[property_name]
 			# Dereference references to objects and enums
 			if property.get("$ref"):
 				property['type'] = get_reference(property.get("$ref"))
 				del property['$ref']
 
+		print 'allClasses >>'
+		print name
 		allClasses[name] = {
-			'oneOf': False,
+			'kind': 'class',
 			'properties': properties,
 			'required': root.get('required', [])
 		}
 
+def parseEnum(root, name):
+	allClasses[name] = {
+		'kind': 'enum',
+		'enum': root.get('enum', []),
+		'type': root.get('type', 'string')
+	}
+
 def get_reference(reference):
 	if reference[:2] != "#/":
 		raise RuntimeError('Only internal absolute references are allowed at this time')
+
+	print reference
+
 	refComponents = reference[2:].split('/')
 	element = schema
 	while len(refComponents) > 0:
@@ -62,7 +77,14 @@ def get_reference(reference):
 		element = element.get(key)
 
 	if not key in allClasses:
-		parseClass(element, key)
+		if element.get('type') == 'object':
+			print 'parseClass ' + key
+			parseClass(element, key)
+		elif element.get('enum'):
+			print 'parseEnum ' + key
+			parseEnum(element, key)
+		else:
+			raise RuntimeError('Only enums are allowed by reference at this time')
 
 	return key
 
@@ -70,12 +92,14 @@ def parseOneOf(one_of, name):
 	possibles = []
 	for item in one_of:
 		if item.get('$ref'):
-			possibles.append(get_reference(item.get('$ref')))
+			ref = get_reference(item.get('$ref'))
+			possibles.append(ref)
 		else:
+			print item
 			raise RuntimeError('oneOf only supports referenced definitions at this time')
 
 	allClasses[name] = {
-		'oneOf': True,
+		'kind': 'oneOf',
 		'possibles': possibles
 	}
 
@@ -90,9 +114,11 @@ def generate(platform, name, definition):
 			'prefix': prefix,
 			'package': package,
 			'name': name,
+			'kind': definition.get('kind', 'class'),
 			'required': definition.get('required', []),
 			'properties': definition.get('properties', {}),
 			'possibles': definition.get('possibles', []),
+			'enum': definition.get('enum', []),
 			'oneOf': definition.get('oneOf', False),
 			'allClasses': allClasses
 		})
@@ -114,5 +140,3 @@ platforms = os.listdir('platforms')
 for platform in platforms:
 	for name, definition in allClasses.iteritems():
 		generate(platform, name, definition)
-
-

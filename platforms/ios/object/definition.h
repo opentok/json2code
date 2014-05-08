@@ -1,11 +1,28 @@
 //
-//  J2CEntity.h
-//  json2code
+//  {{ prefix }}{{ name | classize }}.h - {{ kind }}
 //
-//  Created by json2code on 3/14/14.
+//  Created by json2code on (replace with date).
 //
 
 #import <Foundation/Foundation.h>
+
+{% if kind == 'enum' %}
+typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}) {
+{% for enum_val in enum %}
+  {{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }},
+{% endfor %}
+};
+
+@interface {{ prefix }}{{ name | classize }}Helper : NSObject
+
++ (NSDictionary *)enumValues;
++ (NSDictionary *)enumStrings;
++ (BOOL)isValidEnumValue:(NSString*)value;
++ (NSInteger)enumValueFor:(NSString*)value;
++ (NSString*)enumStringFrom:({{ prefix }}{{ name | classize }});
+
+@end
+{% else %}
 {% for property_name, property in properties.iteritems() %}
 {% if not(property.enum) and property.type != "string" and property.type != "number" %}
 #import "{{ prefix }}{{ property_name | classize }}.h"
@@ -22,14 +39,11 @@ extern NSString *{{ prefix }}{{ name | classize }}ErrorDomain;
 + (id){{ name | instantize }}WithData:(NSData*)data error:(NSError**)err;
 + (id){{ name | instantize }}WithDictionary:(NSDictionary *)dict error:(NSError **)error;
 + (BOOL)validateDictionary:(NSDictionary*)dict error:(NSError **)err;
+{% if kind != "oneOf" %}
 
-{% if not(oneOf) %}
 - (NSDictionary*)dictionary;
 - (NSData*)dataWithJSONOptions:(NSJSONWritingOptions)opts error:(NSError**)error;
-{% endif %}
 
-{% if oneOf %}
-{% else %}
 {% for property_name, property in properties.iteritems() %}
 {% if property.enum %}
 typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | classize }}) {
@@ -42,13 +56,15 @@ typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | c
 @property NSString* {{ property_name }};
 {% elif property.type == "number" %}
 @property NSNumber* {{ property_name }};
-{% elif allClasses[property.type].oneOf %}
+{% elif allClasses[property.type].kind == 'oneOf' %}
 @property id {{ property_name }};
+{% elif allClasses[property.type].kind == 'enum' %}
+@property {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
 {% else %}
 @property {{ prefix }}{{ property.type|capitalize }}* {{ property_name }};
 {% endif %}
-
 {% endfor %}
-{% endif %}
 
+{% endif %}
 @end
+{% endif %}
