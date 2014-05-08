@@ -11,6 +11,48 @@
 
 NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }}ErrorDomain";
 
+{% if kind == 'enum' %}
+
++ (NSDictionary *)enumValues {
+  static NSDictionary *{{ prefix }}{{ name | classize }}TypeDictionary;
+   static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    {{ prefix }}{{ name | classize }}TypeDictionary = @{
+      {% for enum_val in enum %}
+        @"{{ enum_val }}": @({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}),
+      {% endfor %}
+    };
+  });
+  return {{ prefix }}{{ name | classize }}TypeDictionary;
+}
+
+
++ (NSDictionary *)enumStrings {
+  static NSDictionary *{{ prefix }}{{ name | classize }}TypeDictionary;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    {{ prefix }}{{ name | classize }}TypeDictionary = @{
+      {% for enum_val in enum %}
+        @({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}): @"{{ enum_val }}",
+      {% endfor %}
+    };
+  });
+  return {{ prefix }}{{ name | classize }}TypeDictionary;
+}
+
++(BOOL)isValidEnumValue:(NSString*)value {
+  return [self enumValues][value] != nil;
+}
+
++(NSInteger)enumValueFor:(NSString*)value {
+  return [[self enumValues][value] integerValue];
+}
+
++(NSString*)enumStringFrom:({{ prefix }}{{ name | classize }})value {
+  return [self enumStrings][@(value)];
+}
+
+{% else %}
 @implementation {{ prefix }}{{ name | classize }}
 
 + {{ name | instantize }}WithData:(NSData*)data error:(NSError **)err {
@@ -46,7 +88,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
   return deserialized;
 }
 
-{% if oneOf %}
+{% if kind == 'oneOf' %}
 
 + (id) {{ name | instantize }}WithDictionary:(NSDictionary *)dict error:(NSError **)error {
 
@@ -172,6 +214,13 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
                   withProperty:@"{{ property_name }}"];
     return NO;
   }
+{% elif allClasses[property.type].kind == 'enum' %}
+  if (dict[@"{{ property_name }}"] &&
+      ![{{ prefix }}{{ property.type | classize }}Helper isValidEnumValue:dict[@"{{property_name}}"]]) {
+    *err = [self validateError:[NSString stringWithFormat:@"%@ is not a valid value for {{ property_name }}", dict[@"{{ property_name }}"]]
+                  withProperty:@"{{ property_name }}"];
+    return NO;
+  }
 {% else %}
   if(dict[@"{{ property_name }}"] &&
     ![{{ prefix }}{{ property.type | classize }} validateDictionary:dict[@"{{ property_name }}"] error:err]) {
@@ -187,15 +236,17 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
   self = [super init];
   if (self != nil) {
 {% for property_name, property in properties.iteritems() %}
-{% if property.enum %}
-    self.{{ property_name }} = [{{ prefix }}{{ name | classize }} enum{{ property_name | classize }}ValueFor:dict[@"{{ property_name }}"]];
-{% elif property.type == "string" or property.type == "number" %}
-    self.{{ property_name }} = dict[@"{{ property_name }}"];
-{% else %}
     if(dict[@"{{ property_name }}"]) {
+{% if property.enum %}
+      self.{{ property_name }} = [{{ prefix }}{{ name | classize }} enum{{ property_name | classize }}ValueFor:dict[@"{{ property_name }}"]];
+{% elif property.type == "string" or property.type == "number" %}
+      self.{{ property_name }} = dict[@"{{ property_name }}"];
+{% elif allClasses[property.type].kind == 'enum' %}
+      self.{{ property_name }} = [{{ prefix }}{{ property.type | classize }}Helper enumValueFor:dict[@"{{ property_name }}"]];
+{% else %}
       self.{{ property_name }} = [{{ prefix }}{{ property.type | classize }} {{ property.type | instantize }}WithDictionary:dict[@"{{ property_name }}"] error:nil];
-    }
 {% endif %}
+    }
 {% endfor %}
   }
   return self;
@@ -205,9 +256,11 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
   return @{
 {% for property_name, property in properties.iteritems() %}
 {% if property.enum %}
-    @"{{ property_name }}": NIL_TO_NULL([{{ prefix }}{{ name |classize }} enum{{ property_name | classize }}StringFrom:self.{{ property_name }}]),
+    @"{{ property_name }}": NIL_TO_NULL([{{ prefix }}{{ name | classize }} enum{{ property_name | classize }}StringFrom:self.{{ property_name }}]),
 {% elif property.type == "string" or property.type == "number" %}
     @"{{ property_name }}": NIL_TO_NULL(self.{{ property_name }}),
+{% elif allClasses[property.type].kind == 'enum' %}
+    @"{{ property_name }}": NIL_TO_NULL([{{ prefix }}{{ property.type | classize }}Helper enumStringFrom:self.{{ property_name }}]),
 {% else %}
     @"{{ property_name }}": NIL_TO_NULL([self.{{ property_name }} dictionary]),
 {% endif %}
@@ -223,3 +276,5 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
 
 {% endif %}
 @end
+
+{% endif %}
