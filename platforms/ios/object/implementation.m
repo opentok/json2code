@@ -13,6 +13,8 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
 
 {% if kind == 'enum' %}
 
+@implementation {{ prefix }}{{ name | classize }}Helper
+
 + (NSDictionary *)enumValues {
   static NSDictionary *{{ prefix }}{{ name | classize }}TypeDictionary;
    static dispatch_once_t onceToken;
@@ -51,6 +53,8 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
 +(NSString*)enumStringFrom:({{ prefix }}{{ name | classize }})value {
   return [self enumStrings][@(value)];
 }
+
+@end
 
 {% else %}
 @implementation {{ prefix }}{{ name | classize }}
