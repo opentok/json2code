@@ -36,21 +36,16 @@ allClasses = {}
 def parseClass(root, name):
 	one_of = root.get('oneOf', {})
 	if one_of:
-		print 'wtf'
 		parseOneOf(one_of, name)
-		print 'wtf'
 	else:
 		properties = root.get('properties', {})
 		for property_name in properties.iterkeys():
-			print 'property_name = ' + property_name
 			property = properties[property_name]
 			# Dereference references to objects and enums
 			if property.get("$ref"):
 				property['type'] = get_reference(property.get("$ref"))
 				del property['$ref']
 
-		print 'allClasses >>'
-		print name
 		allClasses[name] = {
 			'kind': 'class',
 			'properties': properties,
@@ -68,8 +63,6 @@ def get_reference(reference):
 	if reference[:2] != "#/":
 		raise RuntimeError('Only internal absolute references are allowed at this time')
 
-	print reference
-
 	refComponents = reference[2:].split('/')
 	element = schema
 	while len(refComponents) > 0:
@@ -78,10 +71,8 @@ def get_reference(reference):
 
 	if not key in allClasses:
 		if element.get('type') == 'object':
-			print 'parseClass ' + key
 			parseClass(element, key)
 		elif element.get('enum'):
-			print 'parseEnum ' + key
 			parseEnum(element, key)
 		else:
 			raise RuntimeError('Only enums are allowed by reference at this time')
@@ -95,7 +86,6 @@ def parseOneOf(one_of, name):
 			ref = get_reference(item.get('$ref'))
 			possibles.append(ref)
 		else:
-			print item
 			raise RuntimeError('oneOf only supports referenced definitions at this time')
 
 	allClasses[name] = {
