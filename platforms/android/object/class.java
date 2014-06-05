@@ -15,41 +15,92 @@ public class AssimilatorError {
 	 }
 }
 
+public static String {{ prefix }}{{ name | classize }}ErrorDomain = "{{ prefix }}{{ name }}ErrorDomain";
+
 {% if kind == 'enum' %}
+public class {{ prefix }}{{ name | classize }}Helper {
+	
+	
+	public class EnumValuesSingleton {
+		private JSONObject enumValues = null;
+		   
+		synchronized (this) {
+			if ( enumValue == null ) {
+				{% for enum_val in enum %}
+					enumValues.put("{{ enum_val }}", ({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }});
+				{% endfor %}
+			}
+		}
+		return enumValues;
+		
+	}
+	
+	public class EnumStringsSingleton {
+		private JSONObject enumStrings = null;
+		   
+		synchronized (this) {
+			if ( enumStrings == null ) {
+				{% for enum_val in enum %}
+					enumStrings.put({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}, "{{ enum_val }}");
+				{% endfor %}
+			}
+		}
+		return enumStrings;
+		
+	}
+	
+	public boolean isValidEnumValue(String value) {
+		return (EnumValuesSingleton.get(value) != null)
+	}
+	
+	public int enumValueFor(String value) {
+		return (Integer.parseInt(EnumValuesSingleton.get(value)))
+	}
+	
+	public String enumStringFrom({{ prefix }}{{ name | classize }} value) {
+		return (EnumStringsSingleton.get(String.valueOf(value)));
+	}	
+	
+}
+{% else %}
 public class {{ prefix }}{{ name | classize }} {
-	
+		
 	AssimilatorError error;
-	
-	public JSONObject jsonObj = new JSONObject(){{
+		
+	public class ObjectSingleton {
+		private JSONObject jsonObj = null;
+		   
 		{% for property_name, property in properties.iteritems() %}
 			{% if property.enum %}
-				putString("{{ property_name }}", (({{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}StringFrom)(this.{ property_name }})))
+				jsonObj.put("{{ property_name }}", (({{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}StringFrom)(this.{ property_name }})))
 			{% elif property.type == "string" or property.type == "number" %}
-				putString("{{ property_name }}", this.{{ property_name }})
+				jsonObj.put("{{ property_name }}", this.{{ property_name }})
 			{% elif allClasses[property.type].kind == 'enum' %}
-				putString("{{ property_name }}", ({{ prefix }}{{ property.type | classize }}Helper.numStringFrom(this.{{ property_name }})))
+				jsonObj.put("{{ property_name }}", ({{ prefix }}{{ property.type | classize }}Helper.numStringFrom(this.{{ property_name }})))
 			{% else %}
-				putString("{{ property_name }}", this.{{ property_name }}.jsonObj);
+				jsonObj.put("{{ property_name }}", this.{{ property_name }}.jsonObj);
 			{% endif %}
 		{% endfor %}
-	}};	
-	
+		
+		return jsonObj;
+	}
+
 	public {{ name | instantize }} (JSONObject obj) {
 		super();
-		
+	
 		if (!this.validateObj(obj))
 		{
 			return null;
 		}
-		
+	
 		this.init(obj);
 	}
-	
+
 	private void init(JSONObj obj) {
 		{% for property_name, property in properties.iteritems() %}
 			if(obj.get("{{ property_name }}")) {
 				{% if property.enum %}
-					this.{{ property_name }} = {{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}ValueFor (obj.get("{{ property_name }}"));
+					this.{{ property_name }} = {{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}ValueFor (obj.get("{{ property_name }}"));
 				{% elif property.type == "string" or property.type == "number" %}
 					this.{{ property_name }} = obj.get("{{ property_name }}");
 				{% elif allClasses[property.type].kind == 'enum' %}
@@ -58,40 +109,51 @@ public class {{ prefix }}{{ name | classize }} {
 					//TODO this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.{{ property.type | instantize }}WithDictionary
 				{% endif %}
 			}
-    
 		{% endfor %}
 	}
 	
 	{% for property_name, property in properties.iteritems() %}
 	{% if property.enum %}
-		public JSONObject enumValuesFor{{ property_name | classize }} {{
+		
+		public class EnumValuesFor{{ property_name | classize }}Singleton {
+			private JSONObject enumValuesFor{{ property_name | classize }};
 			
 			synchronized (this) {
-				{% for enum_val in property.enum %}
-					putString("{{ enum_val }}", ({{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }}));
-		        	@"{{ enum_val }}": @({{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }}),
-		        {% endfor %}
+				
+				if ( enumValuesFor{{ property_name | classize }} == null ) {
+					{% for enum_val in property.enum %}
+						enumValuesFor{{ property_name | classize }}.put("{{ enum_val }}", ({{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }}));
+						{% endfor %}
+				}
 			}
-		}};
-	
-		private JSONObject enumStringsFor{{ property_name | classize }} {
+			return enumValuesFor{{ property_name | classize }};
+		}
+			
+		public class EnumStringsFor{{ property_name | classize }}Singleton {
+			private JSONObject enumStringsFor{{ property_name | classize }};
+				
 			synchronized (this) {
-				{% for enum_val in property.enum %}
-					putString(({{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }}),"{{ enum_val }}");
-				{% endfor %}
+					
+				if ( enumStringsFor{{ property_name | classize }} == null ) {
+					{% for enum_val in property.enum %}
+						enumStringsFor{{ property_name | classize }}.put(({{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }}),"{{ enum_val }}");
+			        {% endfor %}
+				
+				}
 			}
-		}};
+			return enumStringsFor{{ property_name | classize }};
+		}
 		
 		private boolean isValid{{ property_name | classize }}EnumValue(String value) {
-			return (this.enumValuesFor{{ property_name | classize }}(value) != null );
+			return (EnumValuesFor{{ property_name | classize }}Singleton.get(value) != null );
 		}
 	
 		private int enum{{ property_name | classize }}ValueFor(String value) {
-			return (this.enumValuesFor{{ property_name | classize }}(value)).getInt();
+			return EnumValuesFor{{ property_name | classize }}Singleton.get(value)).getInt();
 		}
 
 		private String enum{{ property_name | classize }}StringFrom({{ prefix }}{{ name | classize }}{{ property_name | classize }} value) {
-			return (this.enumStringsFor{{ property_name | classize }}(value).toString());
+			return (EnumStringsFor{{ property_name | classize }}Singleton.get(value).toString());
 		}
 
 	{% endif %}
@@ -147,38 +209,5 @@ public class {{ prefix }}{{ name | classize }} {
 	public byte[] getDataFromJSONOptions (JSONOptions opts) {
 		//TODO
 	}
-		
 }
-
-public class {{ prefix }}{{ name | classize }}Helper {
-
-	public boolean isValidEnumValue(String value) {
-		return (this.enumValues.get(value) != null)
-	}
-	
-	public int enumValueFor(String value) {
-		return (Integer.parseInt(this.enumValues.get(value)))
-	}
-	
-	public String enumStringFrom({{ prefix }}{{ name | classize }} value) {
-		return (this.enumStrings.get(String.valueOf(value)));
-	}
-	
-	public JSONObject enumStrings = new JSONObject() {{
-		synchronized (this) {
-			{% for enum_val in enum %}
-				putString({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}, "{{ enum_val }}");
-			{% endfor %}
-		}
-	}};
-	
-	public JSONObject enumValues = new JSONObject() {{
-		synchronized (this) {
-			{% for enum_val in enum %}
-			 	putString("{{ enum_val }}", ({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }});
-			{% endfor %}
-		}
-	}};
-}
-
-{% endif %}	
+{% endif %}
