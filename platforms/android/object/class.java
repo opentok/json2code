@@ -7,8 +7,10 @@ import com.opentok.util.AssimilatorError;
 public class {{ prefix }}{{ name | classize }}Helper {
 	
 	public enum {{ prefix }}{{ name | classize }} {
-	{% for enum_val in enum if not enum.last %}
-		{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}{{ enum.index }},
+	{% set count = 0 %}
+	{% for enum_val in enum %}
+		{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}({{ count }}),
+		{% set count = count + 1 %}
 	{% endfor %}
 		private int value;
 		
