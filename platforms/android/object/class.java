@@ -7,8 +7,8 @@ import com.opentok.util.AssimilatorError;
 public class {{ prefix }}{{ name | classize }}Helper {
 	
 	public enum {{ prefix }}{{ name | classize }} {
-	{% for enum_val in enum %}
-		{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}(0),
+	{% for enum_val in enum if not enum.last %}
+		{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}{{ enum.index }},
 	{% endfor %}
 		private int value;
 		
@@ -20,44 +20,43 @@ public class {{ prefix }}{{ name | classize }}Helper {
 		}
 	};
 	
-	public class EnumValuesSingleton {
-		private JSONObject enumValues = null;
-		   
-		synchronized (this) {
-			if ( enumValues == null ) {
+	public static class EnumValuesSingleton {
+		private static JSONObject enumValues = null;
+		
+		public static synchronized JSONObject getInstance() {
+				if ( enumValues == null ) {
 				{% for enum_val in enum %}
 					enumValues.put("{{ enum_val }}", {{ prefix }}{{ name | classize }}.{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }});
 				{% endfor %}
+				}
 			}
-		}
-		return enumValues;
+			return enumValues;
 		
 	}
 	
-	public class EnumStringsSingleton {
-		private JSONObject enumStrings = null;
-		   
-		synchronized (this) {
-			if ( enumStrings == null ) {
+	public static class EnumStringsSingleton {
+		private static JSONObject enumStrings = null;
+		
+		public static synchronized JSONObject getInstance() {   
+				if ( enumStrings == null ) {
 				{% for enum_val in enum %}
 					enumStrings.put({{ prefix }}{{ name | classize }}.{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}, "{{ enum_val }}");
 				{% endfor %}
-			}
+				}
+			return enumStrings;
 		}
-		return enumStrings;
-		
 	}
 	
 	public boolean isValidEnumValue(String value) {
-		return (EnumValuesSingleton.get(value) != null)
+		return ((EnumValuesSingleton.getInstance()).get(value) != null);
 	}
 	
 	public int enumValueFor(String value) {
-		return (Integer.parseInt(EnumValuesSingleton.get(value)))
+		return (Integer.parseInt((EnumValuesSingleton.getInstance()).get(value)));
 	}
 	
 	public String enumStringFrom({{ prefix }}{{ name | classize }} value) {
-		return (EnumStringsSingleton.get(String.valueOf(value)));
+		return ((EnumStringsSingleton.getInstance()).get(String.valueOf(value)));
 	}	
 	
 }
