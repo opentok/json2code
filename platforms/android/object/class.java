@@ -36,9 +36,8 @@ public class {{ prefix }}{{ name | classize }}Helper {
 					enumValues.put("{{ enum_val }}", {{ prefix }}{{ name | classize }}.{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }});
 				{% endfor %}
 				}
-			}
-			return enumValues;
-		
+				return enumValues;
+			}	
 	}
 	
 	public static class EnumStringsSingleton {
@@ -49,8 +48,8 @@ public class {{ prefix }}{{ name | classize }}Helper {
 				{% for enum_val in enum %}
 					enumStrings.put(({{ prefix }}{{ name | classize }}.{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}).toString(), "{{ enum_val }}");
 				{% endfor %}
+				return enumStrings;
 				}
-			return enumStrings;
 		}
 	}
 	
@@ -59,11 +58,11 @@ public class {{ prefix }}{{ name | classize }}Helper {
 	}
 	
 	public int enumValueFor(String value) {
-		return (Integer.parseInt((EnumValuesSingleton.getInstance()).get(value)));
+		return (Integer.parseInt((EnumValuesSingleton.getInstance()).get(value).toString()));
 	}
 	
 	public String enumStringFrom({{ prefix }}{{ name | classize }} value) {
-		return ((EnumStringsSingleton.getInstance()).get(String.valueOf(value)));
+		return ((EnumStringsSingleton.getInstance()).get(value.toString()).toString());
 	}	
 	
 }
