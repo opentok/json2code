@@ -8,10 +8,15 @@ public class {{ prefix }}{{ name | classize }}Helper {
 	
 	public enum {{ prefix }}{{ name | classize }} {
 	{% set count = 0 %}
-	{% for enum_val in enum %}
-		{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}({{ count }}),
+	{% for enum_val in enum  %}
+		{% if count < loop.length - 1  %}
+			{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}({{ count }}),	
+		{% else %}
+			{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}({{ count }});
+		{% endif %}
 		{% set count = count + 1 %}
 	{% endfor %}
+		
 		private int value;
 		
 		private {{ prefix }}{{ name | classize }}(int value) {
