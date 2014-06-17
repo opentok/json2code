@@ -47,7 +47,7 @@ public class {{ prefix }}{{ name | classize }}Helper {
 		public static synchronized JSONObject getInstance() {   
 				if ( enumStrings == null ) {
 				{% for enum_val in enum %}
-					enumStrings.put({{ prefix }}{{ name | classize }}.{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}, "{{ enum_val }}");
+					enumStrings.put(({{ prefix }}{{ name | classize }}.{{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}).toString(), "{{ enum_val }}");
 				{% endfor %}
 				}
 			return enumStrings;
