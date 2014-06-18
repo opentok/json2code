@@ -138,6 +138,42 @@ public class {{ prefix }}{{ name | classize }} {
 
 	{% endif %}
 	{% endfor %}
+
+{% if kind == 'oneOf' %}
+{% for implementation_name in possibles %}
+{{ prefix }}{{ implementation_name | classize }} {{ implementation_name | instantize }}message = null;
+{% endfor %}
+
+public {{ prefix }}{{ name | classize }}(JSONObject obj) {
+	{% for implementation_name in possibles %}
+	  if({{ prefix }}{{ implementation_name | classize }}.validateObj(obj)) {
+		  {{ implementation_name | instantize }}message = {{ prefix }}{{ implementation_name | classize }}.new{{ prefix }}{{ implementation_name | classize }}(obj);
+	  }
+	 {% endfor %}
+	 assimilatorError = new AssimilatorError("{{ prefix }}{{ name | classize }}", -1, "Could not create {{ prefix }}{{ name | classize }} from dictionary given");
+}
+
+public boolean validateObj (JSONObject obj){
+	  {% for implementation_name in possibles %}
+	  if({{ prefix }}{{ implementation_name | classize }}.validateObj(obj)) {
+	    return true;
+	  }
+	  {% endfor %}
+	  assimilatorError = new AssimilatorError("{{ prefix }}{{ name | classize }}", -1, "Could not create {{ prefix }}{{ name | classize }} from dictionary given");
+	  
+	  return false;
+}
+{% else %}
+
+	public {{ prefix }}{{ name | classize }}(JSONObject obj) {
+		
+		if (!this.validateObj(obj))
+		{
+			return;
+		}
+	
+		this.init(obj);
+	}
 	
 	public JSONObject serialize() {
 		JSONObject jsonObj = new JSONObject();;
@@ -158,16 +194,6 @@ public class {{ prefix }}{{ name | classize }} {
 		}
 		
 		return jsonObj;
-	}
-
-	public {{ prefix }}{{ name | classize }}(JSONObject obj) {
-		
-		if (!this.validateObj(obj))
-		{
-			return;
-		}
-	
-		this.init(obj);
 	}
 
 	public static {{ prefix }}{{ name | classize }} new{{ prefix }}{{ name | classize }}(JSONObject obj) {
@@ -249,6 +275,6 @@ public class {{ prefix }}{{ name | classize }} {
 	/*public byte[] getDataFromJSONOptions (JSONOptions opts) {
 		//TODO
 	}*/
-	
+{% endif %}
 }
 {% endif %}
