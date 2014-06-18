@@ -141,7 +141,7 @@ public class {{ prefix }}{{ name | classize }} {
 
 {% if kind == 'oneOf' %}
 {% for implementation_name in possibles %}
-{{ prefix }}{{ implementation_name | classize }} {{ implementation_name | instantize }}message = null;
+public {{ prefix }}{{ implementation_name | classize }} {{ implementation_name | instantize }}message = null;
 {% endfor %}
 
 public {{ prefix }}{{ name | classize }}(JSONObject obj) {
