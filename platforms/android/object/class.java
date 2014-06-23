@@ -5,7 +5,7 @@ public class {{ prefix }}{{ name | classize }} {
 	
 	{% set count = 0 %}
 	{% for enum_val in enum  %}
-			private static final {{ prefix }}{{ name | classize }} {{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }} = new {{ prefix }}{{ name | classize }}({{ count }});	
+			public static final {{ prefix }}{{ name | classize }} {{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }} = new {{ prefix }}{{ name | classize }}({{ count }});	
 		{% set count = count + 1 %}
 	{% endfor %}
 	
@@ -87,7 +87,7 @@ public class {{ prefix }}{{ name | classize }} {
 	{% elif allClasses[property.type].kind == 'enum' %}
 	public {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
 	{% else %}
-	{{ prefix }}{{ property.type|capitalize }} {{ property_name }};
+	public {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
 	{% endif %}
 	{% endfor %}
 
@@ -140,14 +140,34 @@ public class {{ prefix }}{{ name | classize }} {
 	{% endfor %}
 
 {% if kind == 'oneOf' %}
+
+{% if kind != "oneOf" %}
+{% for property_name, property in properties.iteritems() %}
+{% if property.enum %}
+public {{ prefix }}{{ name }}{{ property_name|capitalize }} {{ property_name }};
+{% elif property.type == "string" %}
+public String {{ property_name }};
+{% elif property.type == "number" %}
+public int {{ property_name }};
+{% elif allClasses[property.type].kind == 'oneOf' %}
+public {{ prefix }}{{ name | classize }} {{ property_name }};
+{% elif allClasses[property.type].kind == 'enum' %}
+public {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
+{% else %}
+public {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
+{% endif %}
+{% endfor %}
+
+{% endif %}
+
 {% for implementation_name in possibles %}
-public {{ prefix }}{{ implementation_name | classize }} {{ implementation_name | instantize }}message = null;
+public {{ prefix }}{{ implementation_name | classize }} {{ implementation_name | instantize }}Msg = null;
 {% endfor %}
 
 public {{ prefix }}{{ name | classize }}(JSONObject obj) {
 	{% for implementation_name in possibles %}
 	  if({{ prefix }}{{ implementation_name | classize }}.validateObj(obj)) {
-		  {{ implementation_name | instantize }}message = {{ prefix }}{{ implementation_name | classize }}.new{{ prefix }}{{ implementation_name | classize }}(obj);
+		  {{ implementation_name | instantize }}Msg = {{ prefix }}{{ implementation_name | classize }}.new{{ prefix }}{{ implementation_name | classize }}(obj);
 	  }
 	 {% endfor %}
 	 assimilatorError = new AssimilatorError("{{ prefix }}{{ name | classize }}", -1, "Could not create {{ prefix }}{{ name | classize }} from dictionary given");
