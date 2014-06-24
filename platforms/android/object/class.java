@@ -21,27 +21,25 @@ public class {{ prefix }}{{ name | classize }} {
 	
 	public static boolean isValidEnumValue(String value) {
 		boolean valid = false;
-		switch(value) {
-			{% for enum_val in enum  %}
-			case  "{{ enum_val }}": 
+		{% for enum_val in enum  %}
+		
+		if (value.equals("{{ enum_val }}") ) {
 				if ({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }} != null) {
 					valid = true;
 				}
-				break;
-			{% endfor %}
 		}
+		{% endfor %}
 		return valid;
 	}
 	
 	public static {{ prefix }}{{ name | classize }} enumValueFor(String value) {
 		{{ prefix }}{{ name | classize }} enumValue = null;
-		switch(value) {
 			{% for enum_val in enum  %}
-			case  "{{ enum_val }}": 
+			if (value.equals("{{ enum_val }}") ) {
+				
 				enumValue = {{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }};
-				break;
+			}
 			{% endfor %}
-		}
 		return enumValue;
 	}
 	
