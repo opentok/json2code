@@ -121,8 +121,14 @@ def generate(platform, name, definition):
 			os.makedirs(folder)
 
 		_, ext = os.path.splitext(template_file)
-		with open(folder + '/' + (prefix if platform == 'ios' else '') + name + ext, 'w') as file:
-			file.write(result)
+		if platform == 'android':
+			with open(folder + '/' + prefix + name + ext, 'w') as file:
+				file.write(result)
+		else:
+			with open(folder + '/' + (prefix if platform == 'ios' else '') + name + ext, 'w') as file:
+				file.write(result)
+		
+		
 
 parseClass(schema, schema.get('title'))
 
