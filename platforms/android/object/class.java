@@ -1,6 +1,13 @@
 package {{ package }};
 
 {% if kind == 'enum' %}
+
+import java.util.HashMap;
+{% for property_name, property in properties.iteritems() %}
+{% if (property.enum) %}
+import {{package}}.{{ prefix }}{{ property_name | classize }}.{{ prefix }}{{ property_name | classize }}Helper;
+{% endif %}
+{% endfor %}
 public class {{ prefix }}{{ name | classize }} {
 	
 	{% set count = 0 %}
@@ -52,7 +59,56 @@ public class {{ prefix }}{{ name | classize }} {
 		{% endfor %}
 		return enumValue;
 	}
+
+
+public static class {{ prefix }}{{ name | classize }}Helper {
+
+	public static HashMap<String, {{ prefix }}{{ name | classize }}> enumValues() {
+		HashMap<String, {{ prefix }}{{ name | classize }}> {{ prefix }}{{ name | classize }}TypeObj = new HashMap<String, {{ prefix }}{{ name | classize }}>();
+		
+		{% for enum_val in enum %}
+		{{ prefix }}{{ name | classize }}TypeObj.put("{{ enum_val }}", {{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }});
+		{% endfor %}	
+	
+		return {{ prefix }}{{ name | classize }}TypeObj;
+	}
+	
+	public static HashMap<{{ prefix }}{{ name | classize }}, String> enumStrings() {
+		HashMap<{{ prefix }}{{ name | classize }}, String> {{ prefix }}{{ name | classize }}TypeObj = new HashMap<{{ prefix }}{{ name | classize }}, String>();
+		
+		{% for enum_val in enum %}
+			{{ prefix }}{{ name | classize }}TypeObj.put({{ prefix }}{{ name | classize }}{{ enum_val | camelize | classize }}, "{{ enum_val }}");
+		{% endfor %}
+	
+		return {{ prefix }}{{ name | classize }}TypeObj;
+	}
+
+	public static boolean isValidEnumValue(String value) {
+		boolean valid = false;
+		
+		valid = (enumValues().get(value) != null);
+		
+		return valid;
+	}
+	
+	public static int enumValueFor(String value) {
+		int valueInt = -1;
+		
+		valueInt = enumValues().get(value).getValue();
+	
+		return valueInt;
+	}
+	
+	public static String enumStringFrom({{ prefix }}{{ name | classize }} value) {
+		String valueStr = null;
+		
+		valueStr =  enumStrings().get(value);
+		
+		return valueStr;
+	}
 }
+}
+
 
 {% else %}
 
@@ -63,8 +119,14 @@ import com.opentok.util.AssimilatorError;
 {% for property_name, property in properties.iteritems() %}
 {% if not(property.enum) and property.type != "string" and property.type != "number" %}
 import {{package}}.{{ prefix }}{{ property_name | classize }};
+{% elif (property.enum) %}
+//TODO import {{package}}.{{ prefix }}{{ property_name | classize }}.{{ prefix }}{{ property_name | classize }}Helper;
 {% endif %}
 {% endfor %}
+import {{package}}.J2CCategory.J2CCategoryHelper; //TODO
+import {{package}}.J2CEvent.J2CEventHelper; //TODO
+import {{package}}.J2CMethod.J2CMethodHelper; //TODO
+import {{package}}.J2CCategory.J2CCategoryHelper; //TODO
 
 public class {{ prefix }}{{ name | classize }} {
 	
@@ -162,6 +224,8 @@ public {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
 public {{ prefix }}{{ implementation_name | classize }} {{ implementation_name | instantize }}Msg = null;
 {% endfor %}
 
+
+
 public {{ prefix }}{{ name | classize }}(JSONObject obj) {
 	{% for implementation_name in possibles %}
 	  if({{ prefix }}{{ implementation_name | classize }}.validateObj(obj)) {
@@ -182,6 +246,10 @@ public boolean validateObj (JSONObject obj){
 	  return false;
 }
 {% else %}
+
+	public {{ prefix }}{{ name | classize }}() {
+
+	}
 
 	public {{ prefix }}{{ name | classize }}(JSONObject obj) {
 		
@@ -223,7 +291,7 @@ public boolean validateObj (JSONObject obj){
 	private void init(JSONObject obj) {
 		try {  
 		{% for property_name, property in properties.iteritems() %}
-			if(obj.get("{{ property_name }}") != null) {
+			if(obj.has("{{ property_name }}")) {
 				{% if property.enum %}
 					this.{{ property_name }} = {{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}ValueFor((String)obj.get("{{ property_name }}"));
 				{% elif property.type == "string" or property.type == "number" %}
@@ -231,7 +299,7 @@ public boolean validateObj (JSONObject obj){
 				{% elif allClasses[property.type].kind == 'enum' %}
 					this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.enumValueFor((String)obj.get("{{ property_name }}"));
 				{% else %}
-				 	this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.new{{ prefix }}{{ property.type | classize }}(obj);
+				 	this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.new{{ prefix }}{{ property.type | classize }}((JSONObject)obj.get("{{ property_name }}"));
 				{% endif %}
 			}
 		{% endfor %}
@@ -241,44 +309,45 @@ public boolean validateObj (JSONObject obj){
 	}
 	
 
-	private AssimilatorError validateError (String msg, String property) {
+	private static AssimilatorError validateError (String msg, String property) {
 		return new AssimilatorError("{{ prefix }}{{ name | classize }}", -2, "Property " + property +"is not valid." + msg);
 	}
 	
 	public static boolean validateObj(JSONObject obj) {
 		
-		{{ prefix }}{{ name | classize }} instance = new {{ prefix }}{{ name | classize }}(obj); //accessing static variable by creating an instance of class
-
+		//{{ prefix }}{{ name | classize }} instance = new {{ prefix }}{{ name | classize }}(obj); //accessing static variable by creating an instance of class
+		AssimilatorError assimilatorError = null;
 		try {  
 		{% for property_name, property in properties.iteritems() %}
 		{% if property_name in required %}
 		if (obj.isNull("{{ property_name }}") || obj.get("{{ property_name }}").equals("")) {
-			instance.assimilatorError = instance.validateError("{{ property_name }} is required but not present or is null", "{{ property_name }}");
+			assimilatorError = {{ prefix }}{{ name | classize }}.validateError("{{ property_name }} is required but not present or is null", "{{ property_name }}");
 			return false;
 		}
 		{% endif %}
 		{% if property.enum %}
-			if (obj.get("{{ property_name }}") != null && !({{ prefix }}{{ name }}.isValid{{property_name | classize}}EnumValue((String)obj.get("{{property_name}}")))) {
-				instance.error = instance.validateError(obj.get("{{ property_name }}" + "is not a valid value for {{ property_name }}", "{{ property_name }}");	
+			if (obj.has("{{ property_name }}") && !({{ prefix }}{{ name }}.isValid{{property_name | classize}}EnumValue((String)obj.get("{{property_name}}")))) {
+				assimilatorError = {{ prefix }}{{ name | classize }}.validateError(obj.get("{{ property_name }}" + "is not a valid value for {{ property_name }}", "{{ property_name }}");	
 			  	return false;
 			 }
 		{% elif property.type == "string" %}
-			if (!(obj.get("{{ property_name }}").getClass().isInstance(String.class))) {
-				instance.assimilatorError = instance.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");
+			
+			if (obj.has("{{ property_name }}") && !(String.class.isInstance(obj.get("{{ property_name }}")))) {
+				assimilatorError = {{ prefix }}{{ name | classize }}.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");
 			    return false;
 			 }
 		{% elif property.type == "number" %}
-		   	if (!(obj.get("{{ property_name }}").getClass().isInstance(Integer.class))) {
-		   		instance.assimilatorError = instance.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");	
+		   	if (obj.has("{{ property_name }}") && !(Integer.class.isInstance(obj.get("{{ property_name }}")))) {
+		   		assimilatorError = {{ prefix }}{{ name | classize }}.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");	
 			    return false;
 			}
 		{% elif allClasses[property.type].kind == 'enum' %}
-			if (obj.get("{{ property_name }}") != null && !({{ prefix }}{{ property.type | classize }}.isValidEnumValue((String)obj.get("{{property_name}}")))) {
-				instance.assimilatorError = instance.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");
+			if (obj.has("{{ property_name }}") && !({{ prefix }}{{ property.type | classize }}.isValidEnumValue((String)obj.get("{{property_name}}")))) {
+				assimilatorError = {{ prefix }}{{ name | classize }}.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");
 			    return false;
 			}
 		{% else %}
-			if (obj.get("{{ property_name }}") != null && !{{ prefix }}{{ property.type | classize }}.validateObj((JSONObject)obj.get("{{ property_name }}"))) {
+			if (obj.has("{{ property_name }}")  && !{{ prefix }}{{ property.type | classize }}.validateObj((JSONObject)obj.get("{{ property_name }}"))) {
 				return false;
 			 }
 		{% endif %}
@@ -290,9 +359,37 @@ public boolean validateObj (JSONObject obj){
 		return true;
 	}
 
+	public JSONObject getObj() {
+		JSONObject jsonObj = new JSONObject();
+		try {
+			
+			{% for property_name, property in properties.iteritems() %}
+			{% if property.enum %}
+			if (this.{{property_name}} != null)
+				jsonObj.put("{{ property_name }}", {{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}StringFrom(this.{{ property_name }}));
+			{% elif property.type == "string" or property.type == "number" %}
+			if (this.{{property_name}} != null)
+				jsonObj.put("{{ property_name }}", this.{{ property_name }});
+			{% elif allClasses[property.type].kind == 'enum' %}
+			if (this.{{property_name}} != null)
+				jsonObj.put("{{ property_name }}", {{ prefix }}{{ property.type | classize }}Helper.enumStringFrom(this.{{ property_name }}));
+			{% else %}
+			if (this.{{property_name}} != null)
+				jsonObj.put("{{ property_name }}", this.{{ property_name }}.getObj());
+			{% endif %}
+			{% endfor %}
+			
+		}catch(JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return jsonObj;
+	}
+	
 	/*public byte[] getDataFromJSONOptions (JSONOptions opts) {
 		//TODO
 	}*/
+	
 {% endif %}
 }
 {% endif %}
