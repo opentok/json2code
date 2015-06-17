@@ -51,7 +51,7 @@ typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | c
   {{ prefix }}{{ name | classize }}{{ property_name | classize }}{{ enum_val | camelize | classize }},
 {% endfor %}
 };
-@property {{ prefix }}{{ name }}{{ property_name|capitalize }} {{ property_name }};
+@property {{ prefix }}{{ name }}{{ property_name|classize }} {{ property_name }};
 {% elif property.type == "string" %}
 @property (copy, nonatomic) NSString* {{ property_name }};
 {% elif property.type == "number" %}
@@ -59,9 +59,9 @@ typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | c
 {% elif allClasses[property.type].kind == 'oneOf' %}
 @property (retain, nonatomic) id {{ property_name }};
 {% elif allClasses[property.type].kind == 'enum' %}
-@property {{ prefix }}{{ property.type|capitalize }} {{ property_name }};
+@property {{ prefix }}{{ property.type|classize }} {{ property_name }};
 {% else %}
-@property (retain, nonatomic) {{ prefix }}{{ property.type|capitalize }}* {{ property_name }};
+@property (retain, nonatomic) {{ prefix }}{{ property.type|classize }}* {{ property_name }};
 {% endif %}
 {% endfor %}
 
