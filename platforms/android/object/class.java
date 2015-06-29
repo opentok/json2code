@@ -339,7 +339,8 @@ public boolean validateObj (JSONObject obj){
 				{% elif property.type == "number" %}
 					this.{{ property_name }} = (Integer) obj.get("{{ property_name }}");
 				{% elif allClasses[property.type].kind == 'enum' %}
-					this.{{ property_name }} = new {{ prefix }}{{ name | classize }}{{ property_name | classize }}({{ prefix }}{{ property.type | classize }}.enumValueFor((String)obj.get("{{ property_name }}")));
+					//this.{{ property_name }} = new {{ prefix }}{{ name | classize }}{{ property_name | classize }}({{ prefix }}{{ property.type | classize }}.enumValueFor((String)obj.get("{{ property_name }}")));
+					this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.enumValueFor((String)obj.get("{{ property_name }}"));
 				{% else %}
 				 	this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.new{{ prefix }}{{ property.type | classize }}((JSONObject)obj.get("{{ property_name }}"));
 				{% endif %}
