@@ -295,7 +295,7 @@ public class {{ prefix }}{{ name | classize }} {
 				{% elif property.type == "string" %}
 					this.{{ property_name }} = (String) obj.get("{{ property_name }}");
 				{% elif property.type == "number" %}
-					this.{{ property_name }} = (Double) obj.get("{{ property_name }}");
+					this.{{ property_name }} = (Double) obj.getDouble("{{ property_name }}");
 				{% elif allClasses[property.type].kind == 'enum' %}
 					//this.{{ property_name }} = new {{ prefix }}{{ name | classize }}{{ property_name | classize }}({{ prefix }}{{ property.type | classize }}.enumValueFor((String)obj.get("{{ property_name }}")));
 					this.{{ property_name }} = {{ prefix }}{{ property.type | classize }}.enumValueFor((String)obj.get("{{ property_name }}"));
@@ -338,7 +338,7 @@ public class {{ prefix }}{{ name | classize }} {
 			    return false;
 			 }
 		{% elif property.type == "number" %}
-		   	if (obj.has("{{ property_name }}") && !(Double.class.isInstance(obj.get("{{ property_name }}")))) {
+		   	if (obj.has("{{ property_name }}") && !(obj.get("{{ property_name }}") instanceof Number)) {
 		   		assimilatorError = {{ prefix }}{{ name | classize }}.validateError(obj.get("{{ property_name }}").getClass() + "is not a valid type for {{ property_name }}", "{{ property_name }}");
 			    return false;
 			}
@@ -384,7 +384,6 @@ public class {{ prefix }}{{ name | classize }} {
 			{% endfor %}
 
 		}catch(JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return jsonObj;
