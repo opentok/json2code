@@ -66,7 +66,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
   id object = [NSJSONSerialization JSONObjectWithData:data
                                               options:0
                                                 error:&error];
-  
+
   if(!object) {
     *err = error;
     return nil;
@@ -212,7 +212,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
     return NO;
   }
 {% elif property.type == "number" %}
-  if(DICT_NOT_NIL(dict[@"{{ property_name }}"]) && ![dict[@"{{ property_name }}" isKindOfClass:[NSNumber class]]) {
+  if(DICT_NOT_NIL(dict[@"{{ property_name }}"]) && ![dict[@"{{ property_name }}"] isKindOfClass:[NSNumber class]]) {
     *err = [self validateError:[NSString stringWithFormat:@"%@ is not a valid type for {{ property_name }}", NSStringFromClass([dict[@"{{ property_name }}"] class])]
                   withProperty:@"{{ property_name }}"];
     return NO;
