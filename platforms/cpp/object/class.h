@@ -77,7 +77,7 @@ namespace quokka_tok {
     }
     
     
-    ~{{ name | classize }}() {
+    virtual ~{{ name | classize }}() {
     {% for property_name, property in properties.iteritems() %}
     {% if property.type != "string" and property.type != "number" and not property.enum and allClasses[property.type].kind != 'enum'%}
         delete m_p{{ property_name | classize }};
