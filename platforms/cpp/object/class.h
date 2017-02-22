@@ -54,7 +54,12 @@ namespace quokka_tok {
         m_p{{ property_name | classize }} = NULL;
       {% endif %}
       {% endif %}
-      {% endfor %}      
+      {% endfor %}
+      {% if kind == 'oneOf' %}
+      {% for optional_property_name in possibles %}
+        m_p{{ optional_property_name | classize }} = NULL;
+      {% endfor %}
+      {% endif %}
     }
 
     {{ name | classize }}(const JSONObject& rJson) : m_{{ prefix }}{{ name | classize }}ErrorDomain("{{ prefix }}{{ name }}ErrorDomain") {
@@ -74,6 +79,10 @@ namespace quokka_tok {
        {% endif %}
        }
        {% endfor %}
+       {% if kind == 'oneOf' %}
+       /* This class is a union type, as such it requires a custom implementation to 
+	* unmarshall, thus it should be used as a base class and extended. */
+       {% endif %}
     }
     
     
@@ -83,6 +92,12 @@ namespace quokka_tok {
         delete m_p{{ property_name | classize }};
     {% endif %}
     {% endfor %}
+    {% if kind == 'oneOf' %}
+    {% for option_type in possibles %}
+      delete m_p{{ option_type | classize }};
+    {% endfor %}
+    {% endif %}
+    
     }
 
       {% for property_name, property in properties.iteritems() %}
@@ -124,7 +139,7 @@ namespace quokka_tok {
     
       {% endfor %}    
     
-    JSONValue * marshall() const {
+    virtual JSONValue * marshall() const {
       JSONObject obj;
       {% for property_name, property in properties.iteritems() %}
       {% if property.enum %}
@@ -138,11 +153,15 @@ namespace quokka_tok {
       {% else %}
       obj[L"{{ property_name }}"] = m_p{{property_name | classize }}->marshall();
       {% endif %}
-      {% endfor %}    
+      {% endfor %}
+       {% if kind == 'oneOf' %}
+       /* This class is a union type, as such it requires a custom implementation to 
+        * unmarshall, thus it should be used as a base class and extended. */
+       {% endif %}      
       return new JSONValue(obj);
     }
 
-    private:
+    protected:
     {% for property_name, property in properties.iteritems() %}
     {% if property.enum %}
     e{{ property_name | classize }} m_{{ property_name | classize }};
@@ -156,6 +175,11 @@ namespace quokka_tok {
       {{ property.type | classize }} * m_p{{ property_name | classize }};
     {% endif %}
     {% endfor %}
+    {% if kind == 'oneOf' %}
+    {% for option_type in possibles %}
+      {{ option_type | classize }} * m_p{{ option_type | classize }};
+    {% endfor %}
+    {% endif %}
     {% for property_name, property in properties.iteritems() %}
     {% if property.enum %}
     static const std::wstring& {{ property_name | classize }}_toString(e{{property_name | classize }} val) {
