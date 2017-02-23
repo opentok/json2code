@@ -2,12 +2,17 @@
 #define {{ name }}_H
 
 #include <string>
-#include "JSON.h"
+#include "SimpleJSON/JSON.h"
 {% for property_name, property in properties.iteritems() %}
   {% if property.type != "string" and property.type != "number" %}
 #include "{{ property.type | classize }}.h"
    {% endif %}
 {% endfor %}
+{% if kind == 'oneOf' %}
+{% for option_type in possibles %}
+#include "{{ option_type | classize }}.h"
+{% endfor %}
+{% endif %}
 
 
 namespace quokka_tok {
@@ -40,7 +45,7 @@ namespace quokka_tok {
     {% if property.enum %}
     enum e{{ property_name | classize }}  {
     {% for enum_val in property.enum %}
-        {{property_name | classize }}_{{ enum_val | camelize | classize }}
+    {{property_name | classize }}_{{ enum_val | camelize | classize }},
     {% endfor %}
     };
     {% endif %}
@@ -49,7 +54,7 @@ namespace quokka_tok {
       {% for property_name, property in properties.iteritems() %}
       {% if property.type != "string" and property.type != "number" and not property.enum %}
       {% if allClasses[property.type].kind == 'enum' %}
-        m_{{ property_name }} = {{ allClasses[property.type].enum[0] }};
+      m_{{ property_name }} =  {{property.type | classize }}_{{ allClasses[property.type].enum[0] | camelize | classize }};
       {% else %}
         m_p{{ property_name | classize }} = NULL;
       {% endif %}
@@ -67,7 +72,7 @@ namespace quokka_tok {
        if (rJson.end() != rJson.find(L"{{ property_name }}")) {
           JSONValue * pField = const_cast<JSONObject&>(rJson)[L"{{ property_name }}"];
           {% if property.enum %}
-          m_{{property_name}} =  e{{ property_name | classize }}_toEnum(pField->AsString());
+          m_{{property_name}} =  {{ property_name | classize }}_toEnum(pField->AsString());
 	  {% elif property.type == "string" %}
 	  m_{{property_name}} = std::string(pField->AsString().begin(), pField->AsString().end());
           {% elif property.type == "number" %}
@@ -102,7 +107,7 @@ namespace quokka_tok {
 
       {% for property_name, property in properties.iteritems() %}
       {% if property.enum %}
-    const {{ property.type }} query{{ property_name | classize }}() const {
+    const e{{ property_name | classize }} query{{ property_name | classize }}() const {
       return m_{{property_name}};
       {% elif property.type == "string" %}
     const std::string& query{{ property_name | classize }}() const {
@@ -131,7 +136,7 @@ namespace quokka_tok {
     void set{{ property_name | classize }}(const double val) {
       m_{{ property_name }} = val;
       {% elif allClasses[property.type].kind == 'enum' %}
-    void set{{ property_name | classize }}({{property.type }} val) {
+    void set{{ property_name | classize }}(e{{property.type | classize}} val) {
       m_{{ property_name }} = val;      
       {% else %}
     void set{{ property_name | classize }}({{property.type | classize }} & rVal) {
@@ -143,7 +148,7 @@ namespace quokka_tok {
 
       {% if kind == 'oneOf' %}
       {% for optional_property_name in possibles %}
-   void set{{ optional_property_name | classize }}(const e{{ optional_property_name | classize }} & rVal) {
+   void set{{ optional_property_name | classize }}({{ optional_property_name | classize }} & rVal) {
       m_p{{ optional_property_name | classize }} = &rVal;
    }
 
@@ -159,7 +164,7 @@ namespace quokka_tok {
       JSONObject obj;
       {% for property_name, property in properties.iteritems() %}
       {% if property.enum %}
-      obj[L"{{ property_name }}"] = new JSONValue(e{{ property_name | classize }}_toString(m_{{property_name |  camelize | classize}}));
+      obj[L"{{ property_name }}"] = new JSONValue({{ property_name | classize }}_toString(m_{{property_name}}));
       {% elif property.type == "string" %}
       if (m_{{property_name}}.length()) {
          obj[L"{{ property_name }}"] = new JSONValue(std::wstring(m_{{property_name}}.begin(), m_{{property_name}}.end()));
@@ -167,7 +172,7 @@ namespace quokka_tok {
       {% elif property.type == "number" %}
       obj[L"{{ property_name }}"] = new JSONValue(m_{{property_name}});
       {% elif allClasses[property.type].kind == 'enum' %}
-      obj[L"{{ property_name }}"] = {{ property.type | classize }}_toString(m_{{property_name }});
+      obj[L"{{ property_name }}"] = new JSONValue({{ property.type | classize }}_toString(m_{{property_name }}));
       {% else %}
       if (m_p{{property_name | classize }}) {
          obj[L"{{ property_name }}"] = m_p{{property_name | classize }}->marshall();
@@ -184,7 +189,7 @@ namespace quokka_tok {
     protected:
     {% for property_name, property in properties.iteritems() %}
     {% if property.enum %}
-      e{{ property_name | classize }} m_{{ property_name | classize }};
+      e{{ property_name | classize }} m_{{ property_name }};
     {% elif property.type == "string" %}
       std::string m_{{ property_name }};
     {% elif property.type == "number" %}
@@ -212,11 +217,11 @@ namespace quokka_tok {
        return tbl[val];
     }
     static e{{ property_name | classize }} {{ property_name | classize }}_toEnum(const std::wstring& rVal) {
-       std::map<const wchar_t const *, e{{ property_name | classize }}> tbl;
+      std::map<std::wstring, e{{ property_name | classize }}> tbl;
        {% for enum_val in enum %}
        tbl[L"{{ enum_val }}"] = {{property_name | classize }}_{{ enum_val | camelize | classize }};
        {% endfor %}
-       return tbl[rVal.c_str()];
+       return tbl[rVal];
     }    
     {% endif %}
     {% endfor %}    
