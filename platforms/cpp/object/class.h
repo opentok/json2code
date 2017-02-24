@@ -67,7 +67,7 @@ namespace quokka_tok {
       {% endif %}
     }
 
-    {{ name | classize }}(const JSONObject& rJson) : m_{{ prefix }}{{ name | classize }}ErrorDomain("{{ prefix }}{{ name }}ErrorDomain") {
+    {{ name | classize }}(const JSONObject& rJson) :  {{ name | classize }}() {
        {% for property_name, property in properties.iteritems() %}
        if (rJson.end() != rJson.find(L"{{ property_name }}")) {
           JSONValue * pField = const_cast<JSONObject&>(rJson)[L"{{ property_name }}"];
