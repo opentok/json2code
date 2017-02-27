@@ -49,7 +49,8 @@ def parseClass(root, name):
 		allClasses[name] = {
 			'kind': 'class',
 			'properties': properties,
-			'required': root.get('required', [])
+			'required': root.get('required', []),
+			'additional_properties': root.get('additionalProperties', True)
 		}
 
 def parseEnum(root, name):
