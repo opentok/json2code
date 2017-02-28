@@ -107,6 +107,24 @@ namespace quokka_tok {
 
       {% for property_name, property in properties.iteritems() %}
       {% if property.enum %}
+    e{{ property_name | classize }} query{{ property_name | classize }}() {
+      return m_{{property_name}};
+      {% elif property.type == "string" %}
+    std::string& query{{ property_name | classize }}() {
+      return m_{{property_name}};
+      {% elif property.type == "number" %}
+    double query{{ property_name | classize }}() {
+      return m_{{property_name}};
+      {% elif allClasses[property.type].kind == 'enum' %}
+    e{{ property.type | classize }} query{{ property_name | classize }}() {
+      return m_{{ property_name }};      
+      {% else %}
+    {{ property.type | classize }} * query{{ property_name | classize }}() {
+      return m_p{{property_name | classize }};
+      {% endif %}
+    }
+
+      {% if property.enum %}
     const e{{ property_name | classize }} query{{ property_name | classize }}() const {
       return m_{{property_name}};
       {% elif property.type == "string" %}
@@ -123,8 +141,6 @@ namespace quokka_tok {
       return m_p{{property_name | classize }};
       {% endif %}
     }
-
-    
 
       {% if property.enum %}
     void set{{ property_name | classize }}(const e{{ property_name | classize }} val) {
@@ -152,6 +168,10 @@ namespace quokka_tok {
       m_p{{ optional_property_name | classize }} = &rVal;
    }
 
+   {{ optional_property_name | classize }} * query{{ optional_property_name | classize }}() {
+      return m_p{{optional_property_name | classize }};
+   }
+   
    const {{ optional_property_name | classize }} * query{{ optional_property_name | classize }}() const {
       return m_p{{optional_property_name | classize }};
    }
