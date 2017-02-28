@@ -52,12 +52,12 @@ namespace quokka_tok {
     {% endfor %}
     {{ name | classize }}() : m_{{ prefix }}{{ name | classize }}ErrorDomain("{{ prefix }}{{ name }}ErrorDomain") {
       {% for property_name, property in properties.iteritems() %}
-      {% if property.type != "string" and property.type != "number" and not property.enum %}
-      {% if allClasses[property.type].kind == 'enum' %}
-      m_{{ property_name }} =  {{property.type | classize }}_{{ allClasses[property.type].enum[0] | camelize | classize }};
-      {% else %}
+      {% if property.enum %}
+        m_{{ property_name }} =  {{property_name | classize }}_{{ property.enum[0] | camelize | classize }};
+      {% elif property.type != "string" and property.type != "number" and allClasses[property.type].kind == 'enum' %}
+        m_{{ property_name }} =  {{property.type | classize }}_{{ allClasses[property.type].enum[0] | camelize | classize }};
+      {% elif property.type != "string" and property.type != "number" %}
         m_p{{ property_name | classize }} = NULL;
-      {% endif %}
       {% endif %}
       {% endfor %}
       {% if kind == 'oneOf' %}
