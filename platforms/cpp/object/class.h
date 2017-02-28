@@ -31,11 +31,11 @@ namespace quokka_tok {
     return tbl[val];
   }
   static e{{ name | classize }} {{ name | classize }}_toEnum(const std::wstring& rVal) {
-    std::map<const wchar_t *, e{{ name | classize }}> tbl;
+    std::map<std::wstring, e{{ name | classize }}> tbl;
     {% for enum_val in enum %}
     tbl[L"{{ enum_val }}"] = {{name | classize }}_{{ enum_val | camelize | classize }};
     {% endfor %}
-    return tbl[rVal.c_str()];
+    return tbl[rVal];
   }
   {% else %}
   class {{ name | classize }} {
