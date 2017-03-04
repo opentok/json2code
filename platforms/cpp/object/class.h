@@ -19,26 +19,26 @@
 namespace quokka_tok {
   {% if kind == 'enum' %}
   enum e{{ name | classize }}  {
-    {{name | classize }}_NoValue,
     {% for enum_val in enum %}
     {{name | classize }}_{{ enum_val | camelize | classize }},
     {% endfor %}
+    {{name | classize }}_NoValue
   };
   static const std::wstring& {{ name | classize }}_toString(e{{name | classize }} val) {
     static const std::wstring tbl[{{ enum | length + 1 }}] = {
-      L"",
       {% for enum_val in enum %}
       L"{{ enum_val }}",
       {% endfor %}
+      L"",
     };
     return tbl[val];
   }
   static e{{ name | classize }} {{ name | classize }}_toEnum(const std::wstring& rVal) {
     std::map<std::wstring, e{{ name | classize }}> tbl;
-    tbl[L""] = {{name | classize }}_NoValue;
     {% for enum_val in enum %}
     tbl[L"{{ enum_val }}"] = {{name | classize }}_{{ enum_val | camelize | classize }};
     {% endfor %}
+    tbl[L""] = {{name | classize }}_NoValue;    
     return tbl[rVal];
   }
   {% else %}
@@ -48,10 +48,10 @@ namespace quokka_tok {
     {% for property_name, property in properties.iteritems() %}
     {% if property.enum %}
     enum e{{ property_name | classize }}  {
-       {{property_name | classize}}_NoValue,
     {% for enum_val in property.enum %}
        {{property_name | classize }}_{{ enum_val | camelize | classize }},
     {% endfor %}
+       {{property_name | classize}}_NoValue,    
     };
     {% endif %}
     {% endfor %}
@@ -264,19 +264,19 @@ namespace quokka_tok {
     
     static const std::wstring& {{ property_name | classize }}_toString(e{{property_name | classize }} val) {
        static const std::wstring tbl[{{ property.enum | length + 1 }}] = {
-          L"",
        {% for enum_val in property.enum %}
           L"{{ enum_val }}",
        {% endfor %}
+          L"",       
        };
        return tbl[val];
     }
     static e{{ property_name | classize }} {{ property_name | classize }}_toEnum(const std::wstring& rVal) {
       std::map<std::wstring, e{{ property_name | classize }}> tbl;
-       tbl[L""] = {{property_name | classize }}_NoValue;
        {% for enum_val in property.enum %}
        tbl[L"{{ enum_val }}"] = {{property_name | classize }}_{{ enum_val | camelize | classize }};
        {% endfor %}
+       tbl[L""] = {{property_name | classize }}_NoValue;       
        return tbl[rVal];
     }    
     {% endif %}
