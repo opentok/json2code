@@ -61,6 +61,8 @@ namespace quokka_tok {
         m_{{ property_name }} =  {{property_name | classize }}_NoValue;
       {% elif property.type == "number" %}
         m_{{ property_name }} = NAN;
+      {% elif property.type == "string" %}
+        m_p{{ property_name | classize }} = NULL;
       {% elif property.type != "string" and allClasses[property.type].kind == 'enum' %}
         m_{{ property_name }} =  {{property.type | classize }}_NoValue;
       {% elif property.type != "string" and property.type != "number" %}
@@ -81,7 +83,7 @@ namespace quokka_tok {
           {% if property.enum %}
           m_{{property_name}} =  {{ property_name | classize }}_toEnum(pField->AsString());
 	  {% elif property.type == "string" %}
-          m_{{property_name}} = std::string(pField->AsString().begin(), pField->AsString().end());
+          m_p{{property_name | classize}} = new std::string(pField->AsString().begin(), pField->AsString().end());
           {% elif property.type == "number" %}
           m_{{property_name}} = pField->AsNumber();
 	  {% elif allClasses[property.type].kind == 'enum' %}
@@ -102,7 +104,7 @@ namespace quokka_tok {
           {% if property.enum %}
        m_{{property_name}} =  rCpy.m_{{ property_name }};
 	  {% elif property.type == "string" %}
-       m_{{property_name}} = rCpy.m_{{ property_name }};
+       m_p{{property_name | classize}} = new std::string(*rCpy.m_p{{ property_name | classize}});
           {% elif property.type == "number" %}
        m_{{property_name}} = rCpy.m_{{ property_name }};
 	  {% elif allClasses[property.type].kind == 'enum' %}
@@ -121,8 +123,8 @@ namespace quokka_tok {
     
     virtual ~{{ name | classize }}() {
     {% for property_name, property in properties.iteritems() %}
-    {% if property.type != "string" and property.type != "number" and not property.enum and allClasses[property.type].kind != 'enum'%}
-        delete m_p{{ property_name | classize }};
+    {% if (property.type == "string" and not property.enum) or (property.type != "number" and not property.enum and allClasses[property.type].kind != 'enum' ) %}
+      delete m_p{{ property_name | classize }};
     {% endif %}
     {% endfor %}
     {% if kind == 'oneOf' %}
@@ -138,8 +140,8 @@ namespace quokka_tok {
     e{{ property_name | classize }} query{{ property_name | classize }}() {
       return m_{{property_name}};
       {% elif property.type == "string" %}
-    std::string& query{{ property_name | classize }}() {
-      return m_{{property_name}};
+    std::string query{{ property_name | classize }}() {
+      return (m_p{{property_name | classize}}) ? *m_p{{property_name | classize}} : std::string("");
       {% elif property.type == "number" %}
     double query{{ property_name | classize }}() {
       return m_{{property_name}};
@@ -156,8 +158,8 @@ namespace quokka_tok {
     const e{{ property_name | classize }} query{{ property_name | classize }}() const {
       return m_{{property_name}};
       {% elif property.type == "string" %}
-    const std::string& query{{ property_name | classize }}() const {
-      return m_{{property_name}};
+    const std::string query{{ property_name | classize }}() const {
+      return (m_p{{property_name | classize}}) ? *m_p{{property_name | classize}} : std::string("");
       {% elif property.type == "number" %}
     const double query{{ property_name | classize }}() const {
       return m_{{property_name}};
@@ -175,7 +177,8 @@ namespace quokka_tok {
       m_{{ property_name }} = val;    
       {% elif property.type == "string" %}
     void set{{ property_name | classize }}(const std::string& rVal) {
-      m_{{ property_name }} = rVal;
+      delete m_p{{ property_name | classize }};
+      m_p{{ property_name | classize }} = new std::string(rVal);
       {% elif property.type == "number" %}
     void set{{ property_name | classize }}(const double val) {
       m_{{ property_name }} = val;
@@ -216,8 +219,8 @@ namespace quokka_tok {
          obj[L"{{ property_name }}"] = new JSONValue({{ property_name | classize }}_toString(m_{{property_name}}));
       }
       {% elif property.type == "string" %}
-      if (m_{{property_name}}.length()) {
-         obj[L"{{ property_name }}"] = new JSONValue(std::wstring(m_{{property_name}}.begin(), m_{{property_name}}.end()));
+      if (m_p{{property_name | classize}}) {
+         obj[L"{{ property_name }}"] = new JSONValue(std::wstring(m_p{{property_name | classize}}->begin(), m_p{{property_name | classize}}->end()));
       }
       {% elif property.type == "number" %}
       if (!isnan(m_{{ property_name }})) { 
@@ -245,7 +248,7 @@ namespace quokka_tok {
     {% if property.enum %}
       e{{ property_name | classize }} m_{{ property_name }};
     {% elif property.type == "string" %}
-      std::string m_{{ property_name }};
+      std::string * m_p{{ property_name | classize}};
     {% elif property.type == "number" %}
       double m_{{ property_name }};
     {% elif allClasses[property.type].kind == 'enum' %}
