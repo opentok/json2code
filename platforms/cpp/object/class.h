@@ -223,7 +223,7 @@ namespace quokka_tok {
          obj[L"{{ property_name }}"] = new JSONValue(std::wstring(m_p{{property_name | classize}}->begin(), m_p{{property_name | classize}}->end()));
       }
       {% elif property.type == "number" %}
-      if (!isnan(m_{{ property_name }})) { 
+      if (!std::isnan(m_{{ property_name }})) { 
          obj[L"{{ property_name }}"] = new JSONValue(m_{{property_name}});
       }
       {% elif allClasses[property.type].kind == 'enum' %}
