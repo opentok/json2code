@@ -1,0 +1,35 @@
+{
+  "extends": "airbnb-base",
+  "env": {
+    "browser": false,
+    "node": true,
+  },
+  "parserOptions": {
+    "sourceType": "script"
+  },
+  "rules": {
+    // We are node, we need this or const/let won't work
+    "strict": [2, "global"],
+
+    // AirBnB sets these, and they are good, but work needs to be done before we can use them
+    "no-param-reassign": 0,
+    "func-names": 0,
+    "prefer-rest-params": 0,
+
+    // Special Quokka Codebase Rules
+    "no-new-require": 2,
+    "no-path-concat": 2, // disallow string concatenation with __dirname and __filename (off by default) (on by default in the node environment)
+    "no-process-exit": 1,
+    "no-lonely-if": 2, // disallow if as the only statement in an else block (off by default)
+    "operator-assignment": [2, "always"],
+    "curly": 2,
+    "space-unary-ops": 2,
+    "handle-callback-err": [2, "^(err|error)$" ],
+    "no-undef-init": 1, // disallow use of undefined when initializing variables
+    "no-warning-comments": [1, { "terms": ["todo", "fixme", "xxx"], "location": "start" }],
+    "consistent-this": [2, "self"],
+    "new-parens": 2,
+    "vars-on-top": 0,
+    "no-console": 0
+  }
+}

@@ -137,7 +137,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
   return [[{{ prefix }}{{ name | classize }} alloc] initWithDictionary:dict];
 }
 
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if property.enum %}
 + (NSDictionary *)enumValuesFor{{ property_name | classize }} {
   static NSDictionary *{{ prefix }}{{ name | classize }}{{ property_name | classize }}TypeDictionary;
@@ -190,7 +190,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
 
 + (BOOL)validateDictionary:(NSDictionary*)dict error:(NSError **)err {
 
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if property_name in required %}
   if (DICT_IS_NIL(dict[@"{{ property_name }}"])) {
     *err = [self validateError:@"{{ property_name }} is required but not present or is null"
@@ -238,7 +238,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
 -(id)initWithDictionary:(NSDictionary *)dict {
   self = [super init];
   if (self != nil) {
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
     if(DICT_NOT_NIL(dict[@"{{ property_name }}"])) {
 {% if property.enum %}
       self.{{ property_name }} = [{{ prefix }}{{ name | classize }} enum{{ property_name | classize }}ValueFor:dict[@"{{ property_name }}"]];
@@ -257,7 +257,7 @@ NSString *{{ prefix }}{{ name | classize }}ErrorDomain = @"{{ prefix }}{{ name }
 
 - (NSDictionary*)dictionary {
   return @{
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if property.enum %}
     @"{{ property_name }}": NIL_TO_NULL([{{ prefix }}{{ name | classize }} enum{{ property_name | classize }}StringFrom:self.{{ property_name }}]),
 {% elif property.type == "string" or property.type == "number" %}

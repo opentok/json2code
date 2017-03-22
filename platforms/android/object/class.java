@@ -110,7 +110,7 @@ import org.json.JSONObject;
 import org.json.JSONException;
 import com.opentok.util.AssimilatorError;
 
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if not(property.enum) and property.type != "string" and property.type != "number" %}
 import {{package}}.{{ prefix }}{{ property_name | classize }};
 {% endif %}
@@ -121,7 +121,7 @@ public class {{ prefix }}{{ name | classize }} {
 	public static String {{ prefix }}{{ name | classize }}ErrorDomain = "{{ prefix }}{{ name }}ErrorDomain";
 
 	public AssimilatorError assimilatorError = null;
-	{% for property_name, property in properties.iteritems() %}
+	{% for property_name, property in properties %}
 	{% if property.enum %}
 
 	public static enum {{ prefix }}{{ name | classize }}{{ property_name | classize }} {
@@ -166,7 +166,7 @@ public class {{ prefix }}{{ name | classize }} {
 	public {{ prefix }}{{ property.type|classize }} {{ property_name }};
 	{% endif %}
 	{% endfor %}
-	{% for property_name, property in properties.iteritems() %}
+	{% for property_name, property in properties %}
 	{% if property.enum %}
 
 	private static enum EnumValuesFor{{ property_name | classize }} {
@@ -262,7 +262,7 @@ public class {{ prefix }}{{ name | classize }} {
 	public JSONObject serialize() {
 		JSONObject jsonObj = new JSONObject();;
 		try {
-		{% for property_name, property in properties.iteritems() %}
+		{% for property_name, property in properties %}
 			{% if property.enum %}
 				jsonObj.put("{{ property_name }}", (({{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}StringFrom({{ property_name }}))));
 			{% elif property.type == "string" or property.type == "number" %}
@@ -288,7 +288,7 @@ public class {{ prefix }}{{ name | classize }} {
 
 	private void init(JSONObject obj) {
 		try {
-		{% for property_name, property in properties.iteritems() %}
+		{% for property_name, property in properties %}
 			if(!obj.isNull("{{ property_name }}")) {
 				{% if property.enum %}
 					this.{{ property_name }} = {{ prefix }}{{ name | classize }}{{ property_name | classize }}.fromValue({{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}ValueFor((String)obj.get("{{ property_name }}")));
@@ -319,8 +319,8 @@ public class {{ prefix }}{{ name | classize }} {
 		//{{ prefix }}{{ name | classize }} instance = new {{ prefix }}{{ name | classize }}(obj); //accessing static variable by creating an instance of class
 		AssimilatorError assimilatorError = null;
 		try {
-		{% for property_name, property in properties.iteritems() %}
-		{% if property_name in required %}
+		{% for property_name, property in properties %}
+		{% if required.includes(property_name) %}
 		if (obj.isNull("{{ property_name }}") || obj.get("{{ property_name }}").equals("")) {
 			assimilatorError = {{ prefix }}{{ name | classize }}.validateError("{{ property_name }} is required but not present or is null", "{{ property_name }}");
 			return false;
@@ -364,7 +364,7 @@ public class {{ prefix }}{{ name | classize }} {
 		JSONObject jsonObj = new JSONObject();
 		try {
 
-			{% for property_name, property in properties.iteritems() %}
+			{% for property_name, property in properties %}
 			{% if property.enum %}
 			if (this.{{property_name}} != null)
 				jsonObj.put("{{ property_name }}", {{ prefix }}{{ name | classize }}.enum{{ property_name | classize }}StringFrom(this.{{ property_name }}));
