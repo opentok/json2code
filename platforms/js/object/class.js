@@ -15,8 +15,8 @@ const {{ name | classize }} = {
 module.exports = {{ name | classize }};
 
 {% else %}
-{% for property_name, property in properties.iteritems() %}
-{% if not(property.enum) and property.type != "string" and property.type != "number" %}
+{% for property_name, property in properties %}
+{% if not(property.enum) and property.type !== "string" and property.type !== "number" %}
 const {{ property_name | classize }} = require('./{{ property_name | classize }}');
 {% endif %}
 {% endfor %}
@@ -25,7 +25,7 @@ const {{ implementation_name | classize }} = require('./{{ implementation_name |
 {% endfor %}
 
 {% if kind == 'oneOf' %}
-const {{ name | classize }} = function(dict) {
+const {{ name | classize }} = function (dict) {
   {% for implementation_name in possibles %}
   if (!{{ implementation_name | classize }}.validate(dict)) {
     return new {{ implementation_name | classize }}(dict);
@@ -35,7 +35,7 @@ const {{ name | classize }} = function(dict) {
   throw new Error('Could not create {{ name | classize }} from object given. The object does not conform to any of the valid oneOf types');
 };
 
-{{ name | classize }}.validate = function(dict) {
+{{ name | classize }}.validate = function (dict) {
   {% for implementation_name in possibles %}
   if (!{{ implementation_name | classize }}.validate(dict)) {
     return undefined;
@@ -48,10 +48,10 @@ const {{ name | classize }} = function(dict) {
 {% else %}
 class {{ name | classize }} {
   static validate(dict, shallow) {
-  {% for property_name, property in properties.iteritems() %}
-  {% if property_name in required %}
+  {% for property_name, property in properties %}
+  {% if required.includes(property_name) %}
     if (dict.{{property_name}} == null) {
-      return new Error(`{{name}} is not valid: {{property_name}} is required but not present or is null`);
+      return new Error('{{name}} is not valid: {{property_name}} is required but not present or is null');
     }
 
   {% endif %}
@@ -63,7 +63,7 @@ class {{ name | classize }} {
 
   {% elif property.type == "string" or property.type == "number" %}
     if (dict.{{property_name}} != null &&
-      typeof dict.{{property_name}} != '{{ property.type }}') {
+      typeof dict.{{property_name}} !== '{{ property.type }}') {
       return new Error(`{{name}} is not valid: ${typeof dict.{{property_name}}} is not a valid value for {{property_name}}, must be a {{ property.type }}.`);
     }
 
@@ -99,7 +99,7 @@ class {{ name | classize }} {
     if (validationError) {
       throw validationError;
     }
-  {% for property_name, property in properties.iteritems() %}
+  {% for property_name, property in properties %}
 
     if (dict.{{property_name}} != null) {
   {% if property.enum %}
@@ -115,12 +115,12 @@ class {{ name | classize }} {
   {% endfor %}
   }
 
-  {% for property_name, property in properties.iteritems() %}
+  {% for property_name, property in properties %}
   // get {{ property_name}}() {} returns {{ property.type | classize }}
   {% endfor %}
 }
 {% endif %}
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if property.enum %}
 
 {{ name | classize }}.{{ property_name | classize }} = {
@@ -137,7 +137,7 @@ class {{ name | classize }} {
 {% endfor %}
 
 {{ name | classize }}.Properties = [
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
   '{{ property_name }}',
 {% endfor %}
 ];

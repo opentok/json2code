@@ -1,0 +1,28 @@
+{
+  "name": "json2code",
+  "version": "1.0.0",
+  "description": "Converts json schemas into code for staticly typed languages.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opentok/json2code.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/opentok/json2code/issues"
+  },
+  "homepage": "https://github.com/opentok/json2code#readme",
+  "dependencies": {
+    "mkdirp": "^0.5.1",
+    "nunjucks": "^3.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.18.0",
+    "eslint-config-airbnb-base": "^11.1.1",
+    "eslint-plugin-import": "^2.2.0"
+  }
+}
+

@@ -23,7 +23,7 @@ typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}) {
 
 @end
 {% else %}
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if not(property.enum) and property.type != "string" and property.type != "number" %}
 #import "{{ prefix }}{{ property_name | classize }}.h"
 {% endif %}
@@ -44,7 +44,7 @@ extern NSString *{{ prefix }}{{ name | classize }}ErrorDomain;
 - (NSDictionary*)dictionary;
 - (NSData*)dataWithJSONOptions:(NSJSONWritingOptions)opts error:(NSError**)error;
 
-{% for property_name, property in properties.iteritems() %}
+{% for property_name, property in properties %}
 {% if property.enum %}
 typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | classize }}) {
 {% for enum_val in property.enum %}
