@@ -27,9 +27,9 @@ function instantize(value) {
 env.addFilter('instantize', instantize);
 
 function camelize(value) {
-  const x = value.split('_').map((x) => {
-    if (x) {
-      return classize(x.toLowerCase());
+  const x = value.split('_').map((element) => {
+    if (element) {
+      return classize(element.toLowerCase());
     }
     return '_';
   }).join('');
