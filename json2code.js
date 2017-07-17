@@ -166,13 +166,20 @@ function generate(platform, name, definition) {
   });
 }
 
+function removeByValue(array, value){
+    return array.filter(function(elem, _index){
+        return value != elem ? true : false;
+    });
+}
+
 console.log(schema);
 
 parseClass(schema, schema.title);
 
 console.log(allClasses);
 
-const platforms = fs.readdirSync(path.join(__dirname, 'platforms'));
+var platforms = fs.readdirSync(path.join(__dirname, 'platforms'));
+platforms = removeByValue(platforms, ".DS_Store");
 
 platforms.forEach((platform) => {
   console.log('platform', platform);
