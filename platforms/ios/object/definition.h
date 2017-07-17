@@ -36,8 +36,8 @@ extern NSString *{{ prefix }}{{ name | classize }}ErrorDomain;
 
 @interface {{ prefix }}{{ name | classize }} : NSObject
 
-+ (id){{ name | instantize }}WithData:(NSData*)data error:(NSError**)err;
-+ (id){{ name | instantize }}WithDictionary:(NSDictionary *)dict error:(NSError **)error;
++ (instancetype){{ name | instantize }}WithData:(NSData*)data error:(NSError**)err;
++ (instancetype){{ name | instantize }}WithDictionary:(NSDictionary *)dict error:(NSError **)error;
 + (BOOL)validateDictionary:(NSDictionary*)dict error:(NSError **)err;
 {% if kind != "oneOf" %}
 
@@ -57,11 +57,11 @@ typedef NS_ENUM(NSInteger, {{ prefix }}{{ name | classize }}{{ property_name | c
 {% elif property.type == "number" %}
 @property (copy, nonatomic) NSNumber* {{ property_name }};
 {% elif allClasses[property.type].kind == 'oneOf' %}
-@property (retain, nonatomic) id {{ property_name }};
+@property (strong, nonatomic) id {{ property_name }};
 {% elif allClasses[property.type].kind == 'enum' %}
 @property {{ prefix }}{{ property.type|classize }} {{ property_name }};
 {% else %}
-@property (retain, nonatomic) {{ prefix }}{{ property.type|classize }}* {{ property_name }};
+@property (strong, nonatomic) {{ prefix }}{{ property.type|classize }}* {{ property_name }};
 {% endif %}
 {% endfor %}
 
