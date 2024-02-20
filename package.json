@@ -18,7 +18,7 @@
   "homepage": "https://github.com/opentok/json2code#readme",
   "dependencies": {
     "mkdirp": "^0.5.1",
-    "nunjucks": "^3.0.0"
+    "nunjucks": "^3.2.4"
   },
   "devDependencies": {
     "eslint": "^3.18.0",
